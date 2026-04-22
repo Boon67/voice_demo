@@ -51,7 +51,8 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background
 .btn-danger:hover { background: #dc2626; }
 .btn-sm { padding: 4px 10px; font-size: 0.72rem; }
 
-.app-body { max-width: 1400px; margin: 0 auto; padding: 16px; }
+.app-body { max-width: 1400px; margin: 0 auto; padding: 16px; transition: margin-right 0.3s ease; }
+.app-body-with-panel { margin-right: 400px; }
 
 .card {
   background: var(--card-bg); border: 1px solid var(--border);
@@ -227,3 +228,91 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background
   border-radius: 50%; animation: spin 0.6s linear infinite;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
+
+.transcript-toggle-btn {
+  position: relative;
+  font-size: 1rem !important;
+  padding: 4px 10px !important;
+}
+.transcript-toggle-btn.active {
+  background: rgba(255,255,255,0.2);
+}
+.msg-count {
+  position: absolute; top: -4px; right: -4px;
+  background: var(--green); color: #fff; font-size: 0.6rem;
+  min-width: 16px; height: 16px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; padding: 0 4px;
+}
+
+.transcript-panel {
+  position: fixed; top: 0; right: 0; bottom: 0;
+  width: 390px; z-index: 100;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+  border-left: 1px solid var(--border);
+  display: flex; flex-direction: column;
+  box-shadow: -4px 0 24px rgba(0,0,0,0.08);
+  animation: slideIn 0.3s ease;
+}
+@keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
+
+.transcript-panel-header {
+  padding: 14px 16px;
+  font-weight: 700; font-size: 0.95rem; color: var(--blue-dark);
+  border-bottom: 1px solid var(--border);
+  display: flex; justify-content: space-between; align-items: center;
+  background: linear-gradient(135deg, rgba(41,181,232,0.08) 0%, rgba(13,59,102,0.05) 100%);
+  flex-shrink: 0;
+}
+.transcript-close {
+  background: none; border: none; font-size: 1.1rem;
+  cursor: pointer; color: var(--text-muted); padding: 2px 6px;
+  border-radius: 4px;
+}
+.transcript-close:hover { background: #f1f5f9; }
+
+.transcript-messages {
+  flex: 1; overflow-y: auto; padding: 16px 12px;
+  display: flex; flex-direction: column; gap: 4px;
+  background: #f0f0f0;
+}
+
+.transcript-empty {
+  text-align: center; color: var(--text-muted); font-size: 0.85rem;
+  padding: 40px 20px;
+}
+
+.bubble-row { display: flex; flex-direction: column; }
+.bubble-row-left { align-items: flex-start; }
+.bubble-row-right { align-items: flex-end; }
+
+.speaker-label {
+  font-size: 0.65rem; font-weight: 600; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: 0.03em;
+  margin-bottom: 2px; margin-top: 10px; padding: 0 8px;
+}
+.label-left { align-self: flex-start; }
+.label-right { align-self: flex-end; }
+
+.message-bubble {
+  max-width: 82%; padding: 8px 14px;
+  font-size: 0.84rem; line-height: 1.5;
+  word-wrap: break-word;
+  animation: bubblePop 0.2s ease;
+}
+@keyframes bubblePop { from { opacity: 0; transform: scale(0.95) translateY(4px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+
+.bubble-agent {
+  background: #e5e5ea; color: #1c1c1e;
+  border-radius: 18px 18px 18px 6px;
+}
+.bubble-caller {
+  background: #007aff; color: #fff;
+  border-radius: 18px 18px 6px 18px;
+}
+
+@media (max-width: 900px) {
+  .transcript-panel { width: 100%; }
+  .app-body-with-panel { margin-right: 0; }
+}

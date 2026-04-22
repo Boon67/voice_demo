@@ -209,6 +209,7 @@ async def simulate_call(req: SimulateRequest):
         "call_id": call_id,
         "chunk": current_call.chunk_count,
         "text": req.text,
+        "speaker": "caller",
         "full_transcript": full_transcript,
     })
 
@@ -238,11 +239,13 @@ async def process_audio_segment(path: str, chunk: int, stream_type: str):
     current_call.full_transcript = full_transcript
     current_call.chunk_count = chunk
 
+    speaker = "agent" if chunk % 2 == 1 else "caller"
     await broadcast({
         "type": "transcript_update",
         "call_id": call_id,
         "chunk": chunk,
         "text": text,
+        "speaker": speaker,
         "full_transcript": full_transcript,
     })
 

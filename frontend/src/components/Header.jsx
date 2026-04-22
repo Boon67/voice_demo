@@ -1,4 +1,4 @@
-export default function Header({ health, wsConnected, onRefresh, onReconnect }) {
+export default function Header({ health, wsConnected, onRefresh, onReconnect, transcriptOpen, onTranscriptToggle, messageCount }) {
   return (
     <div className="header">
       <div>
@@ -22,6 +22,9 @@ export default function Header({ health, wsConnected, onRefresh, onReconnect }) 
           <span className={`status-dot ${wsConnected ? 'ok' : 'err'}`} />
           WebSocket
         </span>
+        <button className={`btn transcript-toggle-btn ${transcriptOpen ? 'active' : ''}`} onClick={onTranscriptToggle}>
+          💬 {messageCount > 0 && <span className="msg-count">{messageCount}</span>}
+        </button>
         <button className="btn" onClick={onRefresh}>Refresh</button>
         <button className="btn" onClick={onReconnect}>Reconnect WS</button>
       </div>

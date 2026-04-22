@@ -3,6 +3,7 @@ import './styles/App.css';
 import useWebSocket from './hooks/useWebSocket';
 import Header from './components/Header';
 import CallSimulator from './components/CallSimulator';
+import TranscriptPanel from './components/TranscriptPanel';
 import CustomerLookup from './components/CustomerLookup';
 import ExtractedInfo from './components/ExtractedInfo';
 import ProductMatch from './components/ProductMatch';
@@ -15,7 +16,9 @@ function App() {
   const { connected, lastMessage, reconnect } = useWebSocket();
   const [health, setHealth] = useState({ backend: false, snowflake: false, audio: false });
   const [callId, setCallId] = useState(null);
-  const [transcript, setTranscript] = useState('');
+  const [messages, setMessages] = useState([]);
+  const [callerName, setCallerName] = useState('Unknown');
+  const [transcriptOpen, setTranscriptOpen] = useState(true);
   const [candidates, setCandidates] = useState([]);
   const [extracted, setExtracted] = useState(null);
   const [customer, setCustomer] = useState(null);
@@ -48,16 +51,23 @@ function App() {
     switch (msg.type) {
       case 'call_started':
         setCallId(msg.call_id);
-        setTranscript('');
+        setMessages([]);
+        setCallerName('Unknown');
         setCandidates([]);
         setExtracted(null);
         setCustomer(null);
         setOrders(null);
         setProducts(null);
         setSimilarCases(null);
+        setTranscriptOpen(true);
         break;
       case 'transcript_update':
-        setTranscript(msg.full_transcript || '');
+        setMessages(prev => {
+          if (prev.some(m => m.chunk === msg.chunk)) return prev;
+          const updated = [...prev, { text: msg.text, speaker: msg.speaker || 'caller', chunk: msg.chunk }];
+          updated.sort((a, b) => a.chunk - b.chunk);
+          return updated;
+        });
         break;
       case 'extraction_update':
         setCandidates(msg.candidates || []);
@@ -66,6 +76,9 @@ function App() {
       case 'customer_match':
         setCustomer(msg.customer);
         setOrders(msg.orders);
+        if (msg.customer && msg.customer.name) {
+          setCallerName(msg.customer.name);
+        }
         break;
       case 'product_match':
         setProducts(msg.products);
@@ -107,23 +120,17 @@ function App() {
         wsConnected={connected}
         onRefresh={checkHealth}
         onReconnect={reconnect}
+        transcriptOpen={transcriptOpen}
+        onTranscriptToggle={() => setTranscriptOpen(o => !o)}
+        messageCount={messages.length}
       />
-      <div className="app-body">
+      <div className={`app-body ${transcriptOpen ? 'app-body-with-panel' : ''}`}>
         <CallSimulator
           callId={callId}
           playbackProgress={playbackProgress}
           isPlaying={isPlaying}
           onPlaybackStart={handlePlaybackStart}
         />
-
-        {transcript && (
-          <div className="card" style={{ marginBottom: 16 }}>
-            <div className="card-header">Live Transcript</div>
-            <div className="card-body">
-              <div className="transcript-box">{transcript}</div>
-            </div>
-          </div>
-        )}
 
         {hasResults ? (
           <div className="three-col">
@@ -138,6 +145,13 @@ function App() {
         <ExtractedInfo candidates={candidates} />
         <CallDetails extracted={extracted} />
       </div>
+
+      <TranscriptPanel
+        messages={messages}
+        callerName={callerName}
+        open={transcriptOpen}
+        onToggle={() => setTranscriptOpen(false)}
+      />
     </div>
   );
 }
