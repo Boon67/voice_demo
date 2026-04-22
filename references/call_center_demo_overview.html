@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Call Center AI Demo — Powered by Snowflake</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; color: #1e293b; background: #f8fafc; }
+
+        .hero {
+            background: linear-gradient(135deg, #29b5e8 0%, #1a8bc7 40%, #0d3b66 100%);
+            color: white;
+            padding: 80px 40px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: -50%; left: -50%;
+            width: 200%; height: 200%;
+            background: radial-gradient(circle at 30% 50%, rgba(255,255,255,0.08) 0%, transparent 50%);
+        }
+        .hero h1 { font-size: 3rem; margin-bottom: 16px; position: relative; }
+        .hero h1 span { color: #a5f3fc; }
+        .hero p { font-size: 1.25rem; max-width: 750px; margin: 0 auto; opacity: 0.9; position: relative; line-height: 1.6; }
+        .hero .subtitle { margin-top: 24px; font-size: 1rem; opacity: 0.7; position: relative; }
+
+        .scenario-bar {
+            background: #0d3b66;
+            padding: 28px 40px;
+        }
+        .scenario-inner {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+        .scenario-label {
+            color: #67e8f9;
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 16px;
+        }
+        .scenario-steps {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .scenario-step {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(255,255,255,0.07);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 10px;
+            padding: 12px 18px;
+            flex: 1;
+            min-width: 160px;
+        }
+        .scenario-icon { font-size: 1.4rem; flex-shrink: 0; }
+        .scenario-text { color: #cbd5e1; font-size: 0.88rem; line-height: 1.4; }
+        .scenario-text strong { color: white; }
+        .scenario-divider { color: #475569; font-size: 1.2rem; flex-shrink: 0; }
+
+        .tech-bar {
+            display: flex;
+            justify-content: center;
+            gap: 48px;
+            padding: 36px 20px;
+            background: white;
+            border-bottom: 1px solid #e2e8f0;
+            flex-wrap: wrap;
+        }
+        .tech-item { text-align: center; }
+        .tech-item .label { font-size: 0.75rem; color: #64748b; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+        .tech-item .value { font-size: 1.1rem; font-weight: 700; color: #0d3b66; }
+
+        .section { max-width: 1100px; margin: 0 auto; padding: 64px 24px; }
+        .section-title { font-size: 2rem; text-align: center; margin-bottom: 12px; color: #0d3b66; }
+        .section-subtitle { text-align: center; color: #64748b; margin-bottom: 48px; font-size: 1.1rem; max-width: 700px; margin-left: auto; margin-right: auto; line-height: 1.6; }
+
+        /* Architecture Flow */
+        .flow-section { background: #f1f5f9; }
+        .flow-container {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+            position: relative;
+        }
+        .flow-step {
+            display: grid;
+            grid-template-columns: 80px 1fr;
+            gap: 24px;
+            align-items: start;
+            position: relative;
+            padding-bottom: 40px;
+        }
+        .flow-step:last-child { padding-bottom: 0; }
+        .flow-step::before {
+            content: '';
+            position: absolute;
+            left: 39px;
+            top: 48px;
+            bottom: 0;
+            width: 2px;
+            background: #cbd5e1;
+        }
+        .flow-step:last-child::before { display: none; }
+        .step-number {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, #29b5e8, #0d3b66);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 1.2rem;
+            z-index: 1;
+            margin-left: 16px;
+            flex-shrink: 0;
+        }
+        .step-content {
+            background: white;
+            border-radius: 12px;
+            padding: 28px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+            border-left: 4px solid #29b5e8;
+        }
+        .step-content h3 { font-size: 1.15rem; color: #0d3b66; margin-bottom: 8px; }
+        .step-content p { color: #64748b; font-size: 0.95rem; line-height: 1.7; }
+        .step-content .tech-tags { margin-top: 12px; display: flex; flex-wrap: wrap; gap: 8px; }
+        .tech-tag {
+            display: inline-block;
+            background: #e0f7fa;
+            color: #0e7490;
+            font-size: 0.72rem;
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 999px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .tech-tag.snowflake { background: #dbeafe; color: #1d4ed8; }
+        .tech-tag.ai { background: #fef3c7; color: #92400e; }
+        .tech-tag.frontend { background: #e0e7ff; color: #4338ca; }
+        .flow-next-btn {
+            margin-top: 16px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: #29b5e8;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            padding: 8px 18px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.18s;
+        }
+        .flow-next-btn:hover { background: #1a8bc7; }
+
+        /* Data Model */
+        .model-section { background: white; }
+        .model-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+        }
+        .model-card {
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 28px;
+            border-top: 4px solid #29b5e8;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+        }
+        .model-card.hybrid { border-top-color: #4caf50; }
+        .model-card.regular { border-top-color: #ff9800; }
+        .model-card.view { border-top-color: #9c27b0; }
+        .model-card h3 { font-size: 1.05rem; margin-bottom: 6px; color: #0d3b66; font-family: 'Courier New', monospace; }
+        .model-card .card-type { font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
+        .model-card .card-type.ht { color: #4caf50; }
+        .model-card .card-type.rt { color: #ff9800; }
+        .model-card .card-type.vw { color: #9c27b0; }
+        .model-card p { color: #64748b; font-size: 0.9rem; line-height: 1.6; }
+        .model-card ul { list-style: none; margin-top: 10px; }
+        .model-card ul li { color: #475569; font-size: 0.85rem; padding: 3px 0; font-family: 'Courier New', monospace; }
+        .model-card ul li::before { content: '→ '; color: #29b5e8; }
+
+        /* AI Features */
+        .ai-section { background: #0d3b66; color: white; }
+        .ai-section .section-title { color: white; }
+        .ai-section .section-subtitle { color: #94a3b8; }
+        .ai-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 28px;
+        }
+        .ai-card {
+            background: rgba(255,255,255,0.07);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            padding: 32px;
+            transition: transform 0.2s, background 0.2s;
+        }
+        .ai-card:hover {
+            transform: translateY(-4px);
+            background: rgba(255,255,255,0.1);
+        }
+        .ai-card .icon { font-size: 2rem; margin-bottom: 14px; }
+        .ai-card h3 { color: #67e8f9; font-size: 1.1rem; margin-bottom: 10px; }
+        .ai-card p { color: #cbd5e1; font-size: 0.92rem; line-height: 1.6; }
+        .ai-card code {
+            display: inline-block;
+            margin-top: 12px;
+            background: rgba(0,0,0,0.3);
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.82rem;
+            color: #67e8f9;
+            font-family: 'Courier New', monospace;
+        }
+
+        /* Real-time Features */
+        .realtime-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 28px;
+        }
+        .realtime-card {
+            background: white;
+            border-radius: 16px;
+            padding: 32px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+            border-left: 4px solid #29b5e8;
+            transition: transform 0.2s;
+        }
+        .realtime-card:hover { transform: translateY(-4px); box-shadow: 0 8px 32px rgba(0,0,0,0.1); }
+        .realtime-card .icon { font-size: 2rem; margin-bottom: 14px; }
+        .realtime-card h3 { font-size: 1.1rem; margin-bottom: 8px; color: #0d3b66; }
+        .realtime-card p { color: #64748b; line-height: 1.7; font-size: 0.95rem; }
+        .realtime-card.alert { border-left-color: #ff5722; }
+        .realtime-card.product { border-left-color: #2196f3; }
+        .realtime-card.customer { border-left-color: #4caf50; }
+
+        /* Architecture Diagram */
+        .arch-diagram {
+            background: white;
+            border-radius: 16px;
+            padding: 40px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+            margin-bottom: 48px;
+        }
+        .arch-row {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+        }
+        .arch-box {
+            padding: 14px 24px;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            text-align: center;
+            min-width: 160px;
+        }
+        .arch-box.frontend { background: #e0e7ff; color: #4338ca; border: 2px solid #818cf8; }
+        .arch-box.backend { background: #fef3c7; color: #92400e; border: 2px solid #f59e0b; }
+        .arch-box.snowflake { background: #dbeafe; color: #1d4ed8; border: 2px solid #60a5fa; }
+        .arch-box.ai { background: #fce7f3; color: #9d174d; border: 2px solid #f472b6; }
+        .arch-box.storage { background: #e0f7fa; color: #0e7490; border: 2px solid #22d3ee; }
+        .arch-arrow {
+            font-size: 1.5rem;
+            color: #94a3b8;
+        }
+        .arch-label {
+            font-size: 0.7rem;
+            color: #94a3b8;
+            text-align: center;
+            margin-top: -16px;
+            margin-bottom: 16px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .cta {
+            background: linear-gradient(135deg, #29b5e8, #0d3b66);
+            color: white;
+            text-align: center;
+            padding: 64px 24px;
+        }
+        .cta h2 { font-size: 2rem; margin-bottom: 12px; }
+        .cta p { opacity: 0.85; margin-bottom: 28px; font-size: 1.1rem; max-width: 600px; margin-left: auto; margin-right: auto; }
+
+        footer {
+            text-align: center;
+            padding: 24px;
+            color: #94a3b8;
+            font-size: 0.85rem;
+            background: #f8fafc;
+        }
+
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 2rem; }
+            .hero { padding: 48px 20px; }
+            .tech-bar { gap: 24px; }
+            .flow-step { grid-template-columns: 56px 1fr; gap: 16px; }
+            .step-number { width: 36px; height: 36px; font-size: 1rem; margin-left: 10px; }
+            .flow-step::before { left: 27px; }
+            .arch-row { flex-direction: column; }
+            .arch-arrow { transform: rotate(90deg); }
+        }
+    </style>
+</head>
+<body>
+
+<section class="hero">
+    <h1>Call Center AI Demo <span>Powered by Snowflake</span></h1>
+    <p>A real-time call center application that records live conversations, transcribes audio with Snowflake AI, extracts structured data, identifies customers, matches products, and surfaces similar support cases — all in real time.</p>
+
+</section>
+
+<div class="scenario-bar">
+    <div class="scenario-inner">
+        <div class="scenario-label">Demo Scenario</div>
+        <div class="scenario-steps">
+            <div class="scenario-step">
+                <div class="scenario-icon">📞</div>
+                <div class="scenario-text"><strong>Customer calls</strong> about a defective product</div>
+            </div>
+            <div class="scenario-divider">→</div>
+            <div class="scenario-step">
+                <div class="scenario-icon">🎙️</div>
+                <div class="scenario-text"><strong>Snowflake transcribes</strong> the conversation in real time</div>
+            </div>
+            <div class="scenario-divider">→</div>
+            <div class="scenario-step">
+                <div class="scenario-icon">🧠</div>
+                <div class="scenario-text"><strong>AI extracts</strong> customer, product &amp; issue details</div>
+            </div>
+            <div class="scenario-divider">→</div>
+            <div class="scenario-step">
+                <div class="scenario-icon">🔍</div>
+                <div class="scenario-text"><strong>Semantic matching</strong> surfaces similar past cases</div>
+            </div>
+            <div class="scenario-divider">→</div>
+            <div class="scenario-step">
+                <div class="scenario-icon">⚠️</div>
+                <div class="scenario-text"><strong>Agent sees</strong> it's a known product defect pattern</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- Architecture Overview -->
+<section class="section">
+    <h2 class="section-title">System Architecture</h2>
+    <p class="section-subtitle">End-to-end data flow from microphone to AI-powered agent assistance.</p>
+    <div class="arch-diagram">
+        <div class="arch-row">
+            <div class="arch-box frontend">React Frontend<br><small>localhost:3000</small></div>
+            <div class="arch-arrow">⇄</div>
+            <div class="arch-box frontend">WebSocket<br><small>Real-time Updates</small></div>
+            <div class="arch-arrow">⇄</div>
+            <div class="arch-box backend">FastAPI Backend<br><small>localhost:8080</small></div>
+        </div>
+        <div class="arch-label">HTTP REST + WebSocket</div>
+        <div class="arch-row">
+            <div class="arch-box backend">PyAudio Recorder<br><small>Triple-Stream MP3</small></div>
+            <div class="arch-arrow">→</div>
+            <div class="arch-box storage">Snowflake Stage<br><small>@CALL_CENTER.STG.TRANSCRIPTS</small></div>
+            <div class="arch-arrow">→</div>
+            <div class="arch-box ai">ai_transcribe()<br><small>Speech-to-Text</small></div>
+        </div>
+        <div class="arch-label">Audio Upload → Transcription</div>
+        <div class="arch-row">
+            <div class="arch-box ai">ai_extract()<br><small>Structured Extraction</small></div>
+            <div class="arch-arrow">→</div>
+            <div class="arch-box snowflake">Hybrid Tables<br><small>Customers, Orders, Cases</small></div>
+            <div class="arch-arrow">→</div>
+            <div class="arch-box ai">AI_SIMILARITY()<br><small>Semantic Matching</small></div>
+        </div>
+        <div class="arch-label">Extract → Store → Match</div>
+    </div>
+</section>
+
+<!-- Data Processing Pipeline -->
+<section class="flow-section">
+    <div class="section">
+        <h2 class="section-title">How Data Flows Through the Demo</h2>
+        <p class="section-subtitle">Each audio chunk is processed through a six-stage pipeline that runs automatically as the call progresses.</p>
+        <div class="flow-container">
+            <div class="flow-step" id="flow-step-1">
+                <div class="step-number">1</div>
+                <div class="step-content">
+                    <h3>Audio Capture — Triple-Stream Recording</h3>
+                    <p>PyAudio captures live microphone input at 44.1kHz mono. Three concurrent streams record simultaneously: a <strong>primary stream</strong> producing 10-second MP3 segments for real-time processing, a <strong>secondary stream</strong> offset by 7 seconds to capture words that fall on segment boundaries, and a <strong>continuous archive stream</strong> for the full uninterrupted recording.</p>
+                    <div class="tech-tags">
+                        <span class="tech-tag">PyAudio</span>
+                        <span class="tech-tag">pydub MP3</span>
+                        <span class="tech-tag">Threading</span>
+                    </div>
+                    <button class="flow-next-btn" onclick="scrollToStep(2)">Next &rarr;</button>
+                </div>
+            </div>
+            <div class="flow-step" id="flow-step-2">
+                <div class="step-number">2</div>
+                <div class="step-content">
+                    <h3>Stage Upload — Snowflake Internal Stage</h3>
+                    <p>Each MP3 segment is uploaded to <code>@CALL_CENTER.STG.TRANSCRIPTS</code> using a Snowflake <code>PUT</code> command via the Python connector. Files are named with the pattern <code>{case_id}_{call_id}_{chunk}_{timestamp}_.mp3</code>. The stage uses server-side encryption (SSE), which is required for AI function compatibility.</p>
+                    <div class="tech-tags">
+                        <span class="tech-tag snowflake">PUT Command</span>
+                        <span class="tech-tag snowflake">Internal Stage</span>
+                        <span class="tech-tag snowflake">SSE Encryption</span>
+                    </div>
+                    <button class="flow-next-btn" onclick="scrollToStep(3)">Next &rarr;</button>
+                </div>
+            </div>
+            <div class="flow-step" id="flow-step-3">
+                <div class="step-number">3</div>
+                <div class="step-content">
+                    <h3>Transcription — ai_transcribe()</h3>
+                    <p>Snowflake's built-in <code>ai_transcribe()</code> function converts each staged MP3 file to text. The result includes the full transcript text and audio duration. Transcriptions are inserted into the <code>CALL_TRANSCRIPTS</code> table with case/call identifiers, chunk numbers, and timestamps parsed from the filename.</p>
+                    <div class="tech-tags">
+                        <span class="tech-tag ai">ai_transcribe()</span>
+                        <span class="tech-tag snowflake">to_file()</span>
+                        <span class="tech-tag snowflake">INSERT...SELECT</span>
+                    </div>
+                    <button class="flow-next-btn" onclick="scrollToStep(4)">Next &rarr;</button>
+                </div>
+            </div>
+            <div class="flow-step" id="flow-step-4">
+                <div class="step-number">4</div>
+                <div class="step-content">
+                    <h3>AI Extraction — ai_extract()</h3>
+                    <p>All transcripts for the current call are aggregated and passed to <code>ai_extract()</code> with a structured response format. The AI identifies nine fields from the conversation: <strong>customer name</strong>, <strong>phone</strong>, <strong>email</strong>, <strong>order number</strong>, <strong>product name</strong>, <strong>issue description</strong>, <strong>resolution requested</strong>, <strong>shipping address</strong>, and <strong>return reason</strong>. New candidate values are de-duplicated and inserted into <code>CALL_CANDIDATE_VALUES</code>.</p>
+                    <div class="tech-tags">
+                        <span class="tech-tag ai">ai_extract()</span>
+                        <span class="tech-tag snowflake">Hybrid Table</span>
+                        <span class="tech-tag">9 Extraction Fields</span>
+                    </div>
+                    <button class="flow-next-btn" onclick="scrollToStep(5)">Next &rarr;</button>
+                </div>
+            </div>
+            <div class="flow-step" id="flow-step-5">
+                <div class="step-number">5</div>
+                <div class="step-content">
+                    <h3>Intelligent Matching — Customer, Product & Case Lookup</h3>
+                    <p>Extracted values trigger three parallel lookups: <strong>Customer matching</strong> searches by name, phone, email, or order number against the CUSTOMERS table. <strong>Product matching</strong> uses <code>AI_SIMILARITY()</code> to semantically match mentioned products against the customer's actual order history. <strong>Similar case detection</strong> uses <code>AI_SIMILARITY()</code> to find existing support cases with similar issues — surfacing patterns like recurring product defects across multiple customers.</p>
+                    <div class="tech-tags">
+                        <span class="tech-tag ai">AI_SIMILARITY()</span>
+                        <span class="tech-tag snowflake">Hybrid Tables</span>
+                        <span class="tech-tag snowflake">CASES Table</span>
+                        <span class="tech-tag">Semantic Search</span>
+                    </div>
+                    <button class="flow-next-btn" onclick="scrollToStep(6)">Next &rarr;</button>
+                </div>
+            </div>
+            <div class="flow-step" id="flow-step-6">
+                <div class="step-number">6</div>
+                <div class="step-content">
+                    <h3>Real-Time UI Update — WebSocket Push</h3>
+                    <p>All results are pushed to the React frontend via WebSocket in a single message containing extracted candidates, matched customers, similar cases, and identified products. The UI updates instantly — the agent sees customer details, order history, product matches from their orders, and a panel of similar cases with resolutions, all without lifting a finger.</p>
+                    <div class="tech-tags">
+                        <span class="tech-tag frontend">WebSocket</span>
+                        <span class="tech-tag frontend">React State</span>
+                        <span class="tech-tag">Real-time Push</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- AI Functions -->
+<section class="ai-section">
+    <div class="section">
+        <h2 class="section-title">Snowflake AI Functions in Action</h2>
+        <p class="section-subtitle">Three Cortex AI functions power the entire intelligence pipeline — no external APIs, no data movement, no infrastructure to manage.</p>
+        <div class="ai-grid">
+            <div class="ai-card">
+                <div class="icon">🎙️</div>
+                <h3>ai_transcribe()</h3>
+                <p>Converts staged MP3 audio files to text directly inside Snowflake. Returns transcript text and audio duration metadata. Runs as a SQL function — no external speech-to-text service needed.</p>
+                <code>SELECT ai_transcribe(to_file(@stage, 'audio.mp3'))</code>
+            </div>
+            <div class="ai-card">
+                <div class="icon">🧠</div>
+                <h3>ai_extract()</h3>
+                <p>Extracts structured fields from unstructured transcript text using a JSON response format. Pulls customer names, phone numbers, order numbers, product mentions, issue descriptions, and resolution requests from natural conversation.</p>
+                <code>SELECT ai_extract(text=>transcript, responseformat=>...)</code>
+            </div>
+            <div class="ai-card">
+                <div class="icon">🔍</div>
+                <h3>AI_SIMILARITY()</h3>
+                <p>Performs semantic similarity matching between text strings. Used to match mentioned product names against the catalog, and to find existing support cases with similar issue descriptions — enabling pattern detection across customers.</p>
+                <code>WHERE AI_SIMILARITY(issue_text, case_desc) > 0.4</code>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Real-Time Features -->
+<section class="section">
+    <h2 class="section-title">Real-Time Agent Assistance</h2>
+    <p class="section-subtitle">As the conversation unfolds, the application automatically surfaces relevant information to help the agent resolve issues faster.</p>
+    <div class="realtime-grid">
+        <div class="realtime-card customer">
+            <div class="icon">👤</div>
+            <h3>Auto-Customer Identification</h3>
+            <p>When the caller mentions their name, phone number, or email, the system automatically searches the customer database and displays their full profile including loyalty tier, address, and complete order history with line-item details.</p>
+        </div>
+        <div class="realtime-card product">
+            <div class="icon">📦</div>
+            <h3>Product Match from Order History</h3>
+            <p>When a product is mentioned in conversation, the system uses semantic matching to identify the exact product from the customer's order history — showing the specific order it was on, order status, date, and tracking number.</p>
+        </div>
+        <div class="realtime-card alert">
+            <div class="icon">⚠️</div>
+            <h3>Similar Case Detection</h3>
+            <p>As the issue description emerges from conversation, the system searches all historical cases for similar problems. Surfaces a ranked list with similarity scores, showing other affected customers, resolutions applied, and whether a pattern (like a product defect) exists.</p>
+        </div>
+    </div>
+</section>
+
+<!-- Demo Scenario -->
+<section class="flow-section">
+    <div class="section">
+        <h2 class="section-title">Demo Scenario: The Headphone Defect Pattern</h2>
+        <p class="section-subtitle">The sample data includes a compelling scenario that demonstrates the full power of the system.</p>
+        <div class="flow-container">
+            <div class="flow-step">
+                <div class="step-number">📞</div>
+                <div class="step-content">
+                    <h3>A customer calls about their headphones</h3>
+                    <p>The caller identifies themselves and describes an issue: "The left ear on my noise-canceling headphones keeps cutting out." The system transcribes this in real-time and extracts the customer name, product mention, and issue description.</p>
+                </div>
+            </div>
+            <div class="flow-step">
+                <div class="step-number">👤</div>
+                <div class="step-content">
+                    <h3>Customer identified, order history loaded</h3>
+                    <p>The system matches the caller to their customer record and loads their order history. The "Wireless Noise-Canceling Headphones" are semantically matched against their actual purchase, showing the specific order, date, and delivery status.</p>
+                </div>
+            </div>
+            <div class="flow-step">
+                <div class="step-number">🚨</div>
+                <div class="step-content">
+                    <h3>Similar cases alert fires — a pattern emerges</h3>
+                    <p>The Similar Cases panel lights up: <strong>5 other customers</strong> have reported the same left-ear audio dropout on the same product. Two cases are already closed with resolutions ("Replacement unit shipped. Known firmware issue."), and three remain open with escalating priority from HIGH to CRITICAL. The agent immediately understands this is a known defect — not a one-off issue.</p>
+                </div>
+            </div>
+            <div class="flow-step">
+                <div class="step-number">✅</div>
+                <div class="step-content">
+                    <h3>Agent resolves with confidence</h3>
+                    <p>Armed with the pattern data and previous resolutions, the agent can proactively offer a replacement, reference the known firmware issue, and resolve the call faster — turning a frustrating experience into a demonstration of excellent support.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="cta">
+    <h2>All AI Runs Inside Snowflake</h2>
+    <p>No external APIs. No data movement. No separate ML infrastructure. Speech-to-text, entity extraction, and semantic matching — all running as SQL functions on your data where it already lives.</p>
+</section>
+
+<footer>
+    Call Center AI Demo &mdash; Built with Snowflake Cortex AI Functions, Hybrid Tables & WebSocket &mdash; 2026
+</footer>
+
+</body>
+<script>
+function scrollToStep(n) {
+    var el = document.getElementById('flow-step-' + n);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+</script>
+</html>
