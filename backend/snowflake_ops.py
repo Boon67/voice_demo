@@ -51,6 +51,60 @@ def search_customers(query: str) -> List[Dict[str, Any]]:
         conn.close()
 
 
+def diarize_chunk(text: str) -> List[Dict[str, str]]:
+    if not text or len(text.strip()) < 5:
+        return [{"speaker": "caller", "text": text}]
+    conn = get_connection()
+    cur = conn.cursor()
+    try:
+        cur.execute(f"USE DATABASE {DB}")
+        safe_text = text.replace("'", "''").replace("\\", "\\\\")
+        sql = f"""
+            SELECT TO_VARCHAR(AI_COMPLETE(
+                model => 'llama3.1-70b',
+                prompt => 'You are analyzing a call center audio transcript chunk. This chunk may contain speech from both the AGENT and the CALLER. Split the text into segments by speaker. The agent asks questions, verifies info, offers help, and uses professional language. The caller provides personal info (name, email, phone, address), describes problems, and asks about orders/products. Return JSON with a segments array. Each segment has speaker (agent or caller) and text fields. Preserve the exact original text - do not paraphrase or summarize. If the entire chunk is one speaker, return a single segment.\n\nTranscript chunk: {safe_text}',
+                response_format => {{
+                    'type': 'json',
+                    'schema': {{
+                        'type': 'object',
+                        'properties': {{
+                            'segments': {{
+                                'type': 'array',
+                                'items': {{
+                                    'type': 'object',
+                                    'properties': {{
+                                        'speaker': {{'type': 'string'}},
+                                        'text': {{'type': 'string'}}
+                                    }},
+                                    'required': ['speaker', 'text']
+                                }}
+                            }}
+                        }},
+                        'required': ['segments']
+                    }}
+                }}
+            ))
+        """
+        cur.execute(sql)
+        row = cur.fetchone()
+        if row and row[0]:
+            result = json.loads(row[0]) if isinstance(row[0], str) else row[0]
+            segments = result.get("segments", [])
+            if segments:
+                for seg in segments:
+                    seg["speaker"] = seg.get("speaker", "caller").lower()
+                    if seg["speaker"] not in ("agent", "caller"):
+                        seg["speaker"] = "caller"
+                return segments
+        return [{"speaker": "caller", "text": text}]
+    except Exception as e:
+        logger.error(f"Speaker diarization failed: {e}")
+        return [{"speaker": "caller", "text": text}]
+    finally:
+        cur.close()
+        conn.close()
+
+
 def get_customer_orders(customer_id: int) -> List[Dict[str, Any]]:
     conn = get_connection()
     cur = conn.cursor()

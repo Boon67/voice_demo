@@ -63,9 +63,14 @@ function App() {
         break;
       case 'transcript_update':
         setMessages(prev => {
-          if (prev.some(m => m.chunk === msg.chunk)) return prev;
-          const updated = [...prev, { text: msg.text, speaker: msg.speaker || 'caller', chunk: msg.chunk }];
-          updated.sort((a, b) => a.chunk - b.chunk);
+          const chunkId = String(msg.chunk);
+          if (prev.some(m => m.chunk === chunkId)) return prev;
+          const updated = [...prev, { text: msg.text, speaker: msg.speaker || 'caller', chunk: chunkId }];
+          updated.sort((a, b) => {
+            const [aMain, aSub] = a.chunk.split('.').map(Number);
+            const [bMain, bSub] = b.chunk.split('.').map(Number);
+            return aMain !== bMain ? aMain - bMain : (aSub || 0) - (bSub || 0);
+          });
           return updated;
         });
         break;

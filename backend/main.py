@@ -239,15 +239,16 @@ async def process_audio_segment(path: str, chunk: int, stream_type: str):
     current_call.full_transcript = full_transcript
     current_call.chunk_count = chunk
 
-    speaker = "agent" if chunk % 2 == 1 else "caller"
-    await broadcast({
-        "type": "transcript_update",
-        "call_id": call_id,
-        "chunk": chunk,
-        "text": text,
-        "speaker": speaker,
-        "full_transcript": full_transcript,
-    })
+    segments = await loop.run_in_executor(None, sf.diarize_chunk, text)
+    for seg_idx, seg in enumerate(segments):
+        await broadcast({
+            "type": "transcript_update",
+            "call_id": call_id,
+            "chunk": f"{chunk}.{seg_idx}",
+            "text": seg["text"],
+            "speaker": seg["speaker"],
+            "full_transcript": full_transcript,
+        })
 
     asyncio.create_task(maybe_run_enrichment(call_id, case_id, full_transcript))
 
