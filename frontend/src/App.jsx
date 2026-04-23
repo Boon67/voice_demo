@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import './styles/App.css';
 import useWebSocket from './hooks/useWebSocket';
 import Header from './components/Header';
@@ -12,7 +12,7 @@ import CallSummary from './components/CallSummary';
 const API = 'http://localhost:8080';
 
 function App() {
-  const { connected, messageQueue, clearQueue, reconnect } = useWebSocket();
+  const { connected, subscribe, reconnect } = useWebSocket();
   const [health, setHealth] = useState({ backend: false, snowflake: false, audio: false });
   const [callId, setCallId] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -43,11 +43,7 @@ function App() {
   }, [checkHealth]);
 
   useEffect(() => {
-    if (messageQueue.length === 0) return;
-    const batch = [...messageQueue];
-    clearQueue();
-
-    for (const msg of batch) {
+    const unsub = subscribe((msg) => {
       switch (msg.type) {
         case 'call_started':
           setCallId(msg.call_id);
@@ -121,8 +117,9 @@ function App() {
         default:
           break;
       }
-    }
-  }, [messageQueue, clearQueue]);
+    });
+    return unsub;
+  }, [subscribe]);
 
   const resetApp = useCallback(async () => {
     try {

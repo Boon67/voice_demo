@@ -5,8 +5,16 @@ const WS_URL = 'ws://localhost:8080/ws';
 export default function useWebSocket() {
   const wsRef = useRef(null);
   const [connected, setConnected] = useState(false);
-  const [messageQueue, setMessageQueue] = useState([]);
+  const queueRef = useRef([]);
+  const listenersRef = useRef([]);
   const reconnectTimer = useRef(null);
+
+  const subscribe = useCallback((handler) => {
+    listenersRef.current.push(handler);
+    return () => {
+      listenersRef.current = listenersRef.current.filter(h => h !== handler);
+    };
+  }, []);
 
   const connect = useCallback(() => {
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) return;
@@ -18,7 +26,9 @@ export default function useWebSocket() {
     ws.onmessage = (e) => {
       try {
         const msg = JSON.parse(e.data);
-        setMessageQueue(prev => [...prev, msg]);
+        for (const handler of listenersRef.current) {
+          handler(msg);
+        }
       } catch {}
     };
     ws.onclose = () => {
@@ -42,9 +52,5 @@ export default function useWebSocket() {
     setTimeout(connect, 100);
   }, [connect]);
 
-  const clearQueue = useCallback(() => {
-    setMessageQueue([]);
-  }, []);
-
-  return { connected, messageQueue, clearQueue, reconnect };
+  return { connected, subscribe, reconnect };
 }

@@ -1,10 +1,12 @@
+import AnimatedCard from './AnimatedCard';
+
 export default function SimilarCases({ cases }) {
   if (!cases || cases.length === 0) return null;
 
   const scoreClass = (s) => s > 0.6 ? 'high' : s > 0.45 ? 'medium' : 'low';
 
   return (
-    <div className="card">
+    <AnimatedCard>
       <div className="card-header">
         <span>
           <span className="card-header-icon">🔗</span>
@@ -39,6 +41,6 @@ export default function SimilarCases({ cases }) {
           </div>
         ))}
       </div>
-    </div>
+    </AnimatedCard>
   );
 }

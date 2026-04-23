@@ -1,3 +1,5 @@
+import AnimatedCard from './AnimatedCard';
+
 export default function CallSummary({ extracted }) {
   const val = (key) => {
     if (!extracted) return '';
@@ -21,7 +23,7 @@ export default function CallSummary({ extracted }) {
   if (fields.length === 0) return null;
 
   return (
-    <div className="card">
+    <AnimatedCard>
       <div className="card-header">
         <span><span className="card-header-icon">🔍</span>AI-Extracted Call Summary</span>
         <span className="ai-tag">Snowflake AI_EXTRACT</span>
@@ -36,6 +38,6 @@ export default function CallSummary({ extracted }) {
           ))}
         </div>
       </div>
-    </div>
+    </AnimatedCard>
   );
 }

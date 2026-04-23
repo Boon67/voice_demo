@@ -1,3 +1,5 @@
+import AnimatedCard from './AnimatedCard';
+
 export default function CustomerLookup({ matchedCustomer, matchedOrders }) {
   if (!matchedCustomer) return null;
 
@@ -6,7 +8,7 @@ export default function CustomerLookup({ matchedCustomer, matchedOrders }) {
   const initials = customer.name ? customer.name.split(' ').map(n => n[0]).join('') : '?';
 
   return (
-    <div className="card">
+    <AnimatedCard>
       <div className="card-header">
         <span><span className="card-header-icon">👤</span>Customer Identified</span>
         <span className="ai-tag">AI_SIMILARITY Match</span>
@@ -59,6 +61,6 @@ export default function CustomerLookup({ matchedCustomer, matchedOrders }) {
           </>
         )}
       </div>
-    </div>
+    </AnimatedCard>
   );
 }

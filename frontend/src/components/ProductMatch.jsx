@@ -1,10 +1,12 @@
+import AnimatedCard from './AnimatedCard';
+
 export default function ProductMatch({ products }) {
   if (!products || products.length === 0) return null;
 
   const scoreClass = (s) => s > 0.7 ? 'high' : s > 0.5 ? 'medium' : 'low';
 
   return (
-    <div className="card">
+    <AnimatedCard>
       <div className="card-header">
         <span><span className="card-header-icon">📦</span>Product Identified from Orders</span>
         <span className="ai-tag">AI_SIMILARITY</span>
@@ -29,6 +31,6 @@ export default function ProductMatch({ products }) {
           </div>
         ))}
       </div>
-    </div>
+    </AnimatedCard>
   );
 }

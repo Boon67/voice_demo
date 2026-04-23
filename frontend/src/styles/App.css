@@ -94,6 +94,7 @@ body { font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif; b
   display: flex;
   flex-direction: column;
   overflow-y: auto;
+  min-height: 0;
   border-right: 1px solid rgba(255,255,255,0.06);
 }
 .sidebar-section {
@@ -200,6 +201,7 @@ body { font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif; b
 .center-panel {
   grid-area: center;
   overflow-y: auto;
+  min-height: 0;
   padding: 20px;
   display: flex;
   flex-direction: column;
@@ -212,6 +214,9 @@ body { font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif; b
   box-shadow: var(--shadow-sm);
   border: 1px solid var(--border);
   overflow: hidden;
+  flex-shrink: 0;
+}
+.card-enter {
   animation: cardIn 0.35s ease both;
 }
 @keyframes cardIn {
@@ -512,11 +517,12 @@ body { font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif; b
   flex-direction: column;
   background: #fff;
   border-left: 1px solid var(--border);
+  min-height: 0;
 }
 .transcript-header {
-  padding: 12px 16px;
+  padding: 10px 14px;
   font-weight: 700;
-  font-size: 0.82rem;
+  font-size: 0.75rem;
   color: var(--blue-dark);
   border-bottom: 1px solid var(--border);
   display: flex;
@@ -560,7 +566,7 @@ body { font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif; b
 .bubble-row-right { align-items: flex-end; }
 
 .speaker-label {
-  font-size: 0.6rem;
+  font-size: 0.55rem;
   font-weight: 600;
   color: var(--text-muted);
   text-transform: uppercase;
@@ -574,8 +580,8 @@ body { font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif; b
 
 .message-bubble {
   max-width: 80%;
-  padding: 8px 14px;
-  font-size: 0.82rem;
+  padding: 6px 10px;
+  font-size: 0.72rem;
   line-height: 1.45;
   word-wrap: break-word;
   overflow-wrap: break-word;
