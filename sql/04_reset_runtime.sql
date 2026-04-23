@@ -7,7 +7,7 @@
 -- Run this between demo sessions to start with a clean slate.
 --
 -- Usage:
---   snowsql -f sql/04_reset_runtime.sql
+--   snow sql -f sql/04_reset_runtime.sql
 -- =============================================================================
 
 USE ROLE SYSADMIN;

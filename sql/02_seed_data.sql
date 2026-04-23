@@ -12,7 +12,7 @@
 --   • 01_setup.sql has been executed.
 --
 -- Usage:
---   snowsql -f sql/02_seed_data.sql
+--   snow sql -f sql/02_seed_data.sql
 -- =============================================================================
 
 USE ROLE SYSADMIN;

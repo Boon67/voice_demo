@@ -5,7 +5,7 @@
 -- USE WITH CAUTION — this is irreversible.
 --
 -- Usage:
---   snowsql -f sql/03_teardown.sql
+--   snow sql -f sql/03_teardown.sql
 -- =============================================================================
 
 USE ROLE SYSADMIN;

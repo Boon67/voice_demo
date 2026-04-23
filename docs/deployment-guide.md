@@ -9,7 +9,7 @@
 | Node.js | 18+ | Frontend build and dev server |
 | npm | 9+ | Frontend package manager |
 | ffmpeg | 4+ | Audio segmentation for demo playback |
-| Snowflake CLI | — | Optional: for running SQL scripts via `snowsql` |
+| Snowflake CLI | — | For running SQL scripts via `snow sql` |
 
 ### Install ffmpeg
 
@@ -40,14 +40,14 @@ database = "CALL_CENTER"
 
 ## Step 1: Set Up Snowflake Database
 
-Run the SQL scripts in order. Use Snowsight, SnowSQL, or any SQL client:
+Run the SQL scripts in order. Use Snowsight, Snowflake CLI, or any SQL client:
 
 ```bash
 # Create database, schemas, stage, and all 7 hybrid tables
-snowsql -c MYCONNECTION -f sql/01_setup.sql
+snow sql -c MYCONNECTION -f sql/01_setup.sql
 
 # Populate demo data (8 customers, 10 products, 11 orders, 14 items, 7 cases)
-snowsql -c MYCONNECTION -f sql/02_seed_data.sql
+snow sql -c MYCONNECTION -f sql/02_seed_data.sql
 ```
 
 **Verify:**
@@ -152,7 +152,7 @@ Adjustable via the collapsible config panel in the sidebar, or `POST /api/config
 ### Between Demo Runs
 
 ```bash
-snowsql -c MYCONNECTION -f sql/04_reset_runtime.sql
+snow sql -c MYCONNECTION -f sql/04_reset_runtime.sql
 ```
 
 Or click **Reset** in the sidebar, or:
@@ -163,14 +163,14 @@ curl -X POST http://localhost:8080/api/reset
 ### Full Teardown
 
 ```bash
-snowsql -c MYCONNECTION -f sql/03_teardown.sql
+snow sql -c MYCONNECTION -f sql/03_teardown.sql
 ```
 
 ### Rebuild From Scratch
 
 ```bash
-snowsql -c MYCONNECTION -f sql/01_setup.sql
-snowsql -c MYCONNECTION -f sql/02_seed_data.sql
+snow sql -c MYCONNECTION -f sql/01_setup.sql
+snow sql -c MYCONNECTION -f sql/02_seed_data.sql
 ```
 
 ## Adding New Demo Recordings

@@ -169,7 +169,7 @@ voice_demo/
 ## Prerequisites
 
 - **Snowflake account** with access to AI functions (`AI_EXTRACT`, `AI_SIMILARITY`, `AI_TRANSCRIBE`)
-- **Snowflake CLI** (`snowsql`) or Snowsight for running SQL scripts
+- **Snowflake CLI** (`snow`) or Snowsight for running SQL scripts
 - **Snowflake connection** configured in `~/.snowflake/config.toml`
 - **Python 3.10+**
 - **Node.js 18+** and npm
@@ -179,14 +179,14 @@ voice_demo/
 
 ### 1. Snowflake Database
 
-Run the SQL scripts in order using SnowSQL, Snowsight, or any SQL client:
+Run the SQL scripts in order using the Snowflake CLI, Snowsight, or any SQL client:
 
 ```bash
 # Create database, schemas, stage, and all 7 hybrid tables
-snowsql -f sql/01_setup.sql
+snow sql -f sql/01_setup.sql
 
 # Populate demo data (8 customers, 10 products, 11 orders, 14 items, 7 cases)
-snowsql -f sql/02_seed_data.sql
+snow sql -f sql/02_seed_data.sql
 ```
 
 The setup creates:
@@ -359,14 +359,14 @@ The built-in demo tells the story of **Diana Prince** calling about a defective 
 
 ```bash
 # Reset between demo runs (clears transcripts + candidates, keeps reference data)
-snowsql -f sql/04_reset_runtime.sql
+snow sql -f sql/04_reset_runtime.sql
 
 # Full teardown (drops the entire CALL_CENTER database)
-snowsql -f sql/03_teardown.sql
+snow sql -f sql/03_teardown.sql
 
 # Rebuild from scratch
-snowsql -f sql/01_setup.sql
-snowsql -f sql/02_seed_data.sql
+snow sql -f sql/01_setup.sql
+snow sql -f sql/02_seed_data.sql
 ```
 
 ## Troubleshooting

@@ -10,7 +10,7 @@
 --   • A running warehouse (COMPUTE_WH or equivalent).
 --
 -- Usage:
---   snowsql -f sql/01_setup.sql
+--   snow sql -f sql/01_setup.sql
 --   — or —
 --   Execute in Snowsight / VS Code Snowflake extension.
 --
