@@ -2,14 +2,12 @@ import { useState, useEffect, useCallback } from 'react';
 import './styles/App.css';
 import useWebSocket from './hooks/useWebSocket';
 import Header from './components/Header';
-import CallSimulator from './components/CallSimulator';
+import CallControls from './components/CallControls';
 import TranscriptPanel from './components/TranscriptPanel';
 import CustomerLookup from './components/CustomerLookup';
-import ExtractedInfo from './components/ExtractedInfo';
 import ProductMatch from './components/ProductMatch';
 import SimilarCases from './components/SimilarCases';
-import CallDetails from './components/CallDetails';
-import ConfigPanel from './components/ConfigPanel';
+import CallSummary from './components/CallSummary';
 
 const API = 'http://localhost:8080';
 
@@ -19,7 +17,6 @@ function App() {
   const [callId, setCallId] = useState(null);
   const [messages, setMessages] = useState([]);
   const [callerName, setCallerName] = useState('Unknown');
-  const [transcriptOpen, setTranscriptOpen] = useState(true);
   const [candidates, setCandidates] = useState([]);
   const [extracted, setExtracted] = useState(null);
   const [customer, setCustomer] = useState(null);
@@ -62,7 +59,6 @@ function App() {
           setOrders(null);
           setProducts(null);
           setSimilarCases(null);
-          setTranscriptOpen(true);
           break;
         case 'transcript_update':
           setMessages(prev => {
@@ -123,7 +119,7 @@ function App() {
           setPlaybackProgress(null);
           break;
         default:
-        break;
+          break;
       }
     }
   }, [messageQueue, clearQueue]);
@@ -141,54 +137,49 @@ function App() {
     setPlaybackProgress({ chunk: 0, total: data.total_chunks });
   };
 
-  const hasResults = customer || products || similarCases;
+  const hasCall = callId || extracted || customer;
 
   return (
-    <div>
+    <div className="app-shell">
       <Header
         health={health}
         wsConnected={connected}
-        onRefresh={checkHealth}
-        onReconnect={reconnect}
-        transcriptOpen={transcriptOpen}
-        onTranscriptToggle={() => setTranscriptOpen(o => !o)}
-        messageCount={messages.length}
+        callActive={isPlaying}
+        callId={callId}
       />
-      <div className={`app-body ${transcriptOpen ? 'app-body-with-panel' : ''}`}>
-        <CallDetails extracted={extracted} />
 
-        {hasResults ? (
-          <div className="three-col">
+      <CallControls
+        callId={callId}
+        isPlaying={isPlaying}
+        playbackProgress={playbackProgress}
+        onPlaybackStart={handlePlaybackStart}
+        onReset={resetApp}
+      />
+
+      <div className="center-panel">
+        {!hasCall ? (
+          <div className="empty-hero">
+            <div className="empty-hero-icon">🎧</div>
+            <div className="empty-hero-title">Agent Assist Ready</div>
+            <div className="empty-hero-desc">
+              Select a demo recording from the sidebar and press Play to see real-time AI agent augmentation powered by Snowflake Cortex.
+            </div>
+          </div>
+        ) : (
+          <>
+            <CallSummary extracted={extracted} />
             <CustomerLookup matchedCustomer={customer} matchedOrders={orders} />
             <ProductMatch products={products} />
             <SimilarCases cases={similarCases} />
-          </div>
-        ) : (
-          <CustomerLookup matchedCustomer={customer} matchedOrders={orders} />
+          </>
         )}
-
-        <div className="demo-separator">
-          <span>Demo / Debug Tools Below</span>
-        </div>
-
-        <ExtractedInfo candidates={candidates} />
-
-        <CallSimulator
-          callId={callId}
-          playbackProgress={playbackProgress}
-          isPlaying={isPlaying}
-          onPlaybackStart={handlePlaybackStart}
-          onReset={resetApp}
-        />
-
-        <ConfigPanel />
       </div>
 
       <TranscriptPanel
         messages={messages}
         callerName={callerName}
-        open={transcriptOpen}
-        onToggle={() => setTranscriptOpen(false)}
+        isPlaying={isPlaying}
+        playbackProgress={playbackProgress}
       />
     </div>
   );

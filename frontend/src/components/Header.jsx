@@ -1,32 +1,26 @@
-export default function Header({ health, wsConnected, onRefresh, onReconnect, transcriptOpen, onTranscriptToggle, messageCount }) {
+export default function Header({ health, wsConnected, callActive, callId }) {
   return (
     <div className="header">
-      <div>
-        <h1><b>Call Center AI Demo</b> <span>Powered by Snowflake</span></h1>
-        <div className="subtitle">Real-time transcription · AI extraction · Semantic case matching</div>
+      <div className="header-left">
+        <div className="header-logo">
+          Call Center AI<span>Agent Assist</span>
+        </div>
       </div>
+
+      <div className="header-center">
+        <div className={`call-status-indicator ${callActive ? 'active' : 'idle'}`}>
+          <span className={`call-status-dot ${callActive ? 'active' : 'idle'}`} />
+          {callActive ? `Live Call · ${callId || ''}` : 'No Active Call'}
+        </div>
+      </div>
+
       <div className="header-right">
-        <span className="status-pill">
-          <span className={`status-dot ${health.backend ? 'ok' : 'err'}`} />
-          Backend
-        </span>
-        <span className="status-pill">
-          <span className={`status-dot ${health.snowflake ? 'ok' : 'err'}`} />
-          Snowflake
-        </span>
-        <span className="status-pill">
-          <span className={`status-dot ${health.audio ? 'ok' : 'err'}`} />
-          Audio
-        </span>
-        <span className="status-pill">
-          <span className={`status-dot ${wsConnected ? 'ok' : 'err'}`} />
-          WebSocket
-        </span>
-        <button className={`btn transcript-toggle-btn ${transcriptOpen ? 'active' : ''}`} onClick={onTranscriptToggle}>
-          💬 {messageCount > 0 && <span className="msg-count">{messageCount}</span>}
-        </button>
-        <button className="btn" onClick={onRefresh}>Refresh</button>
-        <button className="btn" onClick={onReconnect}>Reconnect WS</button>
+        <span className={`conn-dot ${health.backend ? 'ok' : 'err'}`} />
+        <span className="conn-label">API</span>
+        <span className={`conn-dot ${health.snowflake ? 'ok' : 'err'}`} />
+        <span className="conn-label">Snowflake</span>
+        <span className={`conn-dot ${wsConnected ? 'ok' : 'err'}`} />
+        <span className="conn-label">WS</span>
       </div>
     </div>
   );

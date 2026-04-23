@@ -1,7 +1,9 @@
-import { useEffect, useRef, useMemo } from 'react';
+import { useEffect, useRef, useMemo, useState } from 'react';
 
-export default function TranscriptPanel({ messages, callerName, open, onToggle }) {
+export default function TranscriptPanel({ messages, callerName, isPlaying, playbackProgress }) {
   const bottomRef = useRef(null);
+  const [elapsed, setElapsed] = useState(0);
+  const timerRef = useRef(null);
 
   const grouped = useMemo(() => {
     const groups = [];
@@ -22,34 +24,55 @@ export default function TranscriptPanel({ messages, callerName, open, onToggle }
     }
   }, [grouped]);
 
-  if (!open) return null;
+  useEffect(() => {
+    if (isPlaying) {
+      setElapsed(0);
+      timerRef.current = setInterval(() => setElapsed(e => e + 1), 1000);
+    } else {
+      if (timerRef.current) clearInterval(timerRef.current);
+    }
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+  }, [isPlaying]);
+
+  const formatTime = (s) => {
+    const m = Math.floor(s / 60);
+    const sec = s % 60;
+    return `${m}:${sec.toString().padStart(2, '0')}`;
+  };
 
   return (
-    <div className="transcript-panel">
-      <div className="transcript-panel-header">
+    <div className="transcript-col">
+      <div className="transcript-header">
         <span>Live Transcript</span>
-        <button className="transcript-close" onClick={onToggle}>✕</button>
+        <span className={`transcript-timer ${isPlaying ? 'active' : ''}`}>
+          {isPlaying ? formatTime(elapsed) : grouped.length > 0 ? `${grouped.length} turns` : ''}
+        </span>
       </div>
       <div className="transcript-messages">
-        {grouped.length === 0 && (
-          <div className="transcript-empty">Waiting for call to begin...</div>
+        {grouped.length === 0 ? (
+          <div className="transcript-empty">
+            <div className="transcript-empty-icon">💬</div>
+            <span>Waiting for call to begin...</span>
+          </div>
+        ) : (
+          <>
+            {grouped.map((group, i) => {
+              const isAgent = group.speaker === 'agent';
+              const label = isAgent ? 'Agent' : callerName;
+              return (
+                <div key={i} className={`bubble-row ${isAgent ? 'bubble-row-left' : 'bubble-row-right'}`}>
+                  <div className={`speaker-label ${isAgent ? 'label-left' : 'label-right'}`}>
+                    {label}
+                  </div>
+                  <div className={`message-bubble ${isAgent ? 'bubble-agent' : 'bubble-caller'}`}>
+                    {group.text}
+                  </div>
+                </div>
+              );
+            })}
+            <div ref={bottomRef} />
+          </>
         )}
-        {grouped.map((group, i) => {
-          const isAgent = group.speaker === 'agent';
-          const label = isAgent ? 'Agent' : callerName;
-
-          return (
-            <div key={i} className={`bubble-row ${isAgent ? 'bubble-row-left' : 'bubble-row-right'}`}>
-              <div className={`speaker-label ${isAgent ? 'label-left' : 'label-right'}`}>
-                {label}
-              </div>
-              <div className={`message-bubble ${isAgent ? 'bubble-agent' : 'bubble-caller'}`}>
-                {group.text}
-              </div>
-            </div>
-          );
-        })}
-        <div ref={bottomRef} />
       </div>
     </div>
   );
