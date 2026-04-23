@@ -27,22 +27,30 @@ TEMP_DIR = os.path.join(tempfile.gettempdir(), "call_center_audio")
 os.makedirs(TEMP_DIR, exist_ok=True)
 
 ASSETS_DIR = os.path.join(os.path.dirname(__file__), "assets")
-DEMO_RECORDINGS = {
-    "demo_call": {"file": os.path.join(ASSETS_DIR, "demo_call.mp3"), "label": "Headphones Defect (Diana Prince)"},
-    "demo_call_2": {"file": os.path.join(ASSETS_DIR, "demo_call_2.mp3"), "label": "Running Shoes Defect (Emily Rodriguez)"},
-}
+DEMO_DOMAIN = os.getenv("DEMO_DOMAIN", "callcenter")
+
+if DEMO_DOMAIN == "insurance":
+    DEMO_RECORDINGS = {
+        "fnol_call": {"file": os.path.join(ASSETS_DIR, "fnol_call.mp3"), "label": "FNOL - Auto Accident (Marcus Johnson)"},
+    }
+else:
+    DEMO_RECORDINGS = {
+        "demo_call": {"file": os.path.join(ASSETS_DIR, "demo_call.mp3"), "label": "Headphones Defect (Diana Prince)"},
+        "demo_call_2": {"file": os.path.join(ASSETS_DIR, "demo_call_2.mp3"), "label": "Running Shoes Defect (Emily Rodriguez)"},
+    }
 playback_task_running = False
 CHUNK_SEMAPHORE = asyncio.Semaphore(3)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger.info("Call Center AI Demo starting...")
+    domain_label = "Rental Insurance FNOL" if DEMO_DOMAIN == "insurance" else "Call Center AI"
+    logger.info(f"{domain_label} Demo starting...")
     yield
     logger.info("Shutting down...")
 
 
-app = FastAPI(title="Call Center AI Demo", lifespan=lifespan)
+app = FastAPI(title="Rental Insurance FNOL Demo" if DEMO_DOMAIN == "insurance" else "Call Center AI Demo", lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -73,6 +81,7 @@ async def health():
         "snowflake": sf_ok,
         "audio": AUDIO_AVAILABLE,
         "call_active": current_call.is_recording,
+        "domain": DEMO_DOMAIN,
     }
 
 

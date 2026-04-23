@@ -1,16 +1,17 @@
 import AnimatedCard from './AnimatedCard';
 
-export default function SimilarCases({ cases }) {
+export default function SimilarCases({ cases, domain }) {
   if (!cases || cases.length === 0) return null;
 
   const scoreClass = (s) => s > 0.6 ? 'high' : s > 0.45 ? 'medium' : 'low';
+  const isInsurance = domain === 'insurance';
 
   return (
     <AnimatedCard>
       <div className="card-header">
         <span>
-          <span className="card-header-icon">🔗</span>
-          Similar Cases
+          <span className="card-header-icon">{isInsurance ? '📄' : '🔗'}</span>
+          {isInsurance ? 'Similar Claims' : 'Similar Cases'}
           <span className="badge-count" style={{ marginLeft: 8 }}>{cases.length}</span>
         </span>
         <span className="ai-tag">AI_SIMILARITY</span>

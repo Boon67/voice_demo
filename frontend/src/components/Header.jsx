@@ -1,4 +1,5 @@
-export default function Header({ health, wsConnected, callActive, callId, onToggleSidebar, onToggleTranscript, sidebarOpen, transcriptOpen, messageCount }) {
+export default function Header({ health, wsConnected, callActive, callId, onToggleSidebar, onToggleTranscript, sidebarOpen, transcriptOpen, messageCount, domain }) {
+  const isInsurance = domain === 'insurance';
   return (
     <div className="header">
       <div className="header-left">
@@ -6,7 +7,7 @@ export default function Header({ health, wsConnected, callActive, callId, onTogg
           🎙️
         </button>
         <div className="header-logo">
-          Call Center AI<span>Agent Assist</span>
+          {isInsurance ? 'Rental Insurance AI' : 'Call Center AI'}<span>{isInsurance ? 'Claims Assist' : 'Agent Assist'}</span>
         </div>
       </div>
 

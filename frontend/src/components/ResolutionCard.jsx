@@ -9,6 +9,10 @@ const ICONS = {
   repair: '🔧',
   credit: '💳',
   exchange: '🔄',
+  tow: '🚛',
+  medical: '🏥',
+  reimburse: '💰',
+  subrogation: '⚖️',
 };
 
 const CONFIDENCE_CLASS = {
@@ -17,15 +21,16 @@ const CONFIDENCE_CLASS = {
   low: 'rec-confidence-low',
 };
 
-export default function ResolutionCard({ recommendations }) {
+export default function ResolutionCard({ recommendations, domain }) {
   if (!recommendations || recommendations.length === 0) return null;
+  const isInsurance = domain === 'insurance';
 
   return (
     <AnimatedCard>
       <div className="card-header">
         <span>
           <span className="card-header-icon">💡</span>
-          AI Resolution Recommendations
+          {isInsurance ? 'AI Claims Recommendations' : 'AI Resolution Recommendations'}
           <span className="badge-count" style={{ marginLeft: 8 }}>{recommendations.length}</span>
         </span>
         <span className="ai-tag">AI_COMPLETE</span>

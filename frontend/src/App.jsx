@@ -14,7 +14,7 @@ const API = 'http://localhost:8080';
 
 function App() {
   const { connected, subscribe, reconnect } = useWebSocket();
-  const [health, setHealth] = useState({ backend: false, snowflake: false, audio: false });
+  const [health, setHealth] = useState({ backend: false, snowflake: false, audio: false, domain: 'callcenter' });
   const [callId, setCallId] = useState(null);
   const [messages, setMessages] = useState([]);
   const [callerName, setCallerName] = useState('Unknown');
@@ -36,7 +36,7 @@ function App() {
       const data = await res.json();
       setHealth(data);
     } catch {
-      setHealth({ backend: false, snowflake: false, audio: false });
+      setHealth({ backend: false, snowflake: false, audio: false, domain: 'callcenter' });
     }
   }, []);
 
@@ -143,6 +143,7 @@ function App() {
     setPlaybackProgress({ chunk: 0, total: data.total_chunks });
   };
 
+  const domain = health.domain || 'callcenter';
   const hasCall = callId || extracted || customer;
 
   return (
@@ -157,6 +158,7 @@ function App() {
         sidebarOpen={sidebarOpen}
         transcriptOpen={transcriptOpen}
         messageCount={messages.length}
+        domain={domain}
       />
 
       <div className="main-row">
@@ -173,22 +175,25 @@ function App() {
         <div className="center-panel">
           {!hasCall ? (
             <div className="empty-hero">
-              <div className="empty-hero-icon">🎧</div>
-              <div className="empty-hero-title">Agent Assist Ready</div>
+              <div className="empty-hero-icon">{domain === 'insurance' ? '🚗' : '🎧'}</div>
+              <div className="empty-hero-title">{domain === 'insurance' ? 'Claims Assist Ready' : 'Agent Assist Ready'}</div>
               <div className="empty-hero-desc">
-                Click the ☰ menu to open demo controls, then select a recording and press Play to see real-time AI agent augmentation powered by Snowflake Cortex.
+                {domain === 'insurance'
+                  ? 'Select a recording and press Play to see real-time AI claims augmentation powered by Snowflake Cortex.'
+                  : 'Click the ☰ menu to open demo controls, then select a recording and press Play to see real-time AI agent augmentation powered by Snowflake Cortex.'
+                }
               </div>
             </div>
           ) : (
             <div className="center-columns">
               <div className="center-col">
-                <CallSummary extracted={extracted} />
-                <CustomerLookup matchedCustomer={customer} matchedOrders={orders} />
-                <ProductMatch products={products} />
+                <CallSummary extracted={extracted} domain={domain} />
+                <CustomerLookup matchedCustomer={customer} matchedOrders={orders} domain={domain} />
+                <ProductMatch products={products} domain={domain} />
               </div>
               <div className="center-col">
-                <SimilarCases cases={similarCases} />
-                <ResolutionCard recommendations={recommendations} />
+                <SimilarCases cases={similarCases} domain={domain} />
+                <ResolutionCard recommendations={recommendations} domain={domain} />
               </div>
             </div>
           )}
