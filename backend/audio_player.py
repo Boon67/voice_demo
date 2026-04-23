@@ -4,10 +4,9 @@ import tempfile
 import logging
 import json
 from typing import List
+import config
 
 logger = logging.getLogger(__name__)
-
-SEGMENT_SECONDS = 5
 
 
 def get_audio_duration(path: str) -> float:
@@ -19,7 +18,9 @@ def get_audio_duration(path: str) -> float:
     return float(info["format"]["duration"])
 
 
-def split_audio_file(path: str, segment_seconds: int = SEGMENT_SECONDS) -> List[str]:
+def split_audio_file(path: str, segment_seconds: int = None) -> List[str]:
+    if segment_seconds is None:
+        segment_seconds = config.SEGMENT_SECONDS
     duration = get_audio_duration(path)
     total_chunks = int(duration // segment_seconds) + (1 if duration % segment_seconds > 1 else 0)
     tmp_dir = tempfile.mkdtemp(prefix="call_center_chunks_")

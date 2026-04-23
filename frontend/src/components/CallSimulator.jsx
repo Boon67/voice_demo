@@ -2,28 +2,27 @@ import { useState, useRef, useEffect } from 'react';
 
 const API = 'http://localhost:8080';
 
-const PRESETS = [
-  {
-    label: 'Intro',
-    text: "Hi, my name is Diana Prince. I'm calling about an issue with a product I purchased recently.",
-  },
-  {
-    label: 'Details',
-    text: "Yes, I bought some wireless noise-canceling headphones about a month ago. The left ear keeps cutting out. The audio just drops randomly and comes back. It started about a week after I got them. My email is diana.prince@gmail.com.",
-  },
-  {
-    label: 'Escalate',
-    text: "I've tried factory resetting them and using different devices but nothing works. I think it's a hardware defect. I'd like a replacement please. My order number was ORD-2026-901.",
-  },
-];
 
-export default function CallSimulator({ callId, playbackProgress, isPlaying, onPlaybackStart }) {
+export default function CallSimulator({ callId, playbackProgress, isPlaying, onPlaybackStart, onReset }) {
   const [open, setOpen] = useState(true);
   const [text, setText] = useState('');
   const [sending, setSending] = useState(false);
   const [starting, setStarting] = useState(false);
+  const [resetting, setResetting] = useState(false);
   const audioRef = useRef(null);
   const [audioTime, setAudioTime] = useState(0);
+  const [recordings, setRecordings] = useState([]);
+  const [selectedRecording, setSelectedRecording] = useState('demo_call');
+
+  useEffect(() => {
+    fetch(`${API}/api/recordings`)
+      .then(r => r.json())
+      .then(data => {
+        setRecordings(data);
+        if (data.length > 0) setSelectedRecording(data[0].id);
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (!isPlaying && audioRef.current) {
@@ -53,7 +52,11 @@ export default function CallSimulator({ callId, playbackProgress, isPlaying, onP
   const playRecording = async () => {
     setStarting(true);
     try {
-      const res = await fetch(`${API}/api/calls/play-recording`, { method: 'POST' });
+      const res = await fetch(`${API}/api/calls/play-recording`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ recording_id: selectedRecording }),
+      });
       const data = await res.json();
       if (data.error) {
         console.error(data.error);
@@ -61,11 +64,12 @@ export default function CallSimulator({ callId, playbackProgress, isPlaying, onP
         return;
       }
 
-      const audio = new Audio(`${API}/api/audio/demo_call.mp3`);
+      const audio = new Audio(`${API}/api/audio/${selectedRecording}.mp3?t=${Date.now()}`);
+      audio.volume = 1.0;
       audioRef.current = audio;
       audio.ontimeupdate = () => setAudioTime(audio.currentTime);
       audio.onended = () => setAudioTime(0);
-      audio.play().catch(console.error);
+      await audio.play();
 
       if (onPlaybackStart) onPlaybackStart(data);
     } catch (e) {
@@ -87,7 +91,19 @@ export default function CallSimulator({ callId, playbackProgress, isPlaying, onP
     }
   };
 
-  const busy = sending || isPlaying || starting;
+  const handleReset = async () => {
+    setResetting(true);
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
+      setAudioTime(0);
+    }
+    if (onReset) await onReset();
+    setText('');
+    setResetting(false);
+  };
+
+  const busy = sending || isPlaying || starting || resetting;
 
   const formatTime = (s) => {
     const m = Math.floor(s / 60);
@@ -137,6 +153,18 @@ export default function CallSimulator({ callId, playbackProgress, isPlaying, onP
                 <button className="sim-btn send" onClick={() => send()} disabled={busy}>
                   {sending ? 'Processing...' : 'Send to Pipeline'}
                 </button>
+                {recordings.length > 1 && (
+                  <select
+                    className="recording-select"
+                    value={selectedRecording}
+                    onChange={e => setSelectedRecording(e.target.value)}
+                    disabled={busy}
+                  >
+                    {recordings.map(r => (
+                      <option key={r.id} value={r.id}>{r.label}</option>
+                    ))}
+                  </select>
+                )}
                 <button
                   className="sim-btn play"
                   onClick={playRecording}
@@ -146,11 +174,9 @@ export default function CallSimulator({ callId, playbackProgress, isPlaying, onP
                 </button>
               </>
             )}
-            {!isPlaying && PRESETS.map((p, i) => (
-              <button key={i} className="sim-btn preset" onClick={() => send(p.text)} disabled={busy}>
-                {p.label}
-              </button>
-            ))}
+            <button className="sim-btn reset" onClick={handleReset} disabled={resetting || isPlaying}>
+              {resetting ? 'Resetting...' : 'Reset App'}
+            </button>
           </div>
         </div>
       )}

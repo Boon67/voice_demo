@@ -11,8 +11,9 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from models import SimulateRequest, SearchRequest, CallStatus
+from models import SimulateRequest, SearchRequest, CallStatus, PlayRequest
 import snowflake_ops as sf
+import config
 from audio import AudioRecorder, AUDIO_AVAILABLE
 from audio_player import split_audio_file, cleanup_chunks, get_audio_duration
 
@@ -26,7 +27,10 @@ TEMP_DIR = os.path.join(tempfile.gettempdir(), "call_center_audio")
 os.makedirs(TEMP_DIR, exist_ok=True)
 
 ASSETS_DIR = os.path.join(os.path.dirname(__file__), "assets")
-DEMO_AUDIO = os.path.join(ASSETS_DIR, "demo_call.mp3")
+DEMO_RECORDINGS = {
+    "demo_call": {"file": os.path.join(ASSETS_DIR, "demo_call.mp3"), "label": "Headphones Defect (Diana Prince)"},
+    "demo_call_2": {"file": os.path.join(ASSETS_DIR, "demo_call_2.mp3"), "label": "Running Shoes Defect (Emily Rodriguez)"},
+}
 playback_task_running = False
 CHUNK_SEMAPHORE = asyncio.Semaphore(3)
 
@@ -105,13 +109,39 @@ async def start_call():
 
 @app.post("/api/calls/stop")
 async def stop_call():
-    global current_call, recorder
+    global current_call, recorder, playback_task_running
     if recorder and recorder.is_recording:
         recorder.stop()
         recorder = None
     current_call.is_recording = False
+    playback_task_running = False
     await broadcast({"type": "call_ended", "call_id": current_call.call_id})
     return {"status": "stopped"}
+
+
+@app.post("/api/reset")
+async def reset_app():
+    global current_call, recorder, playback_task_running, _last_enrichment_len
+    if recorder and recorder.is_recording:
+        recorder.stop()
+        recorder = None
+    playback_task_running = False
+    _last_enrichment_len = 0
+    current_call = CallStatus()
+    loop = asyncio.get_event_loop()
+    success = await loop.run_in_executor(None, sf.reset_runtime_data)
+    await broadcast({"type": "app_reset"})
+    return {"status": "ok" if success else "partial", "reset": success}
+
+
+@app.get("/api/config")
+async def get_config():
+    return config.get_config()
+
+
+@app.post("/api/config")
+async def update_config(updates: dict):
+    return config.update_config(updates)
 
 
 @app.get("/api/calls/status")
@@ -119,14 +149,22 @@ async def call_status():
     return current_call.model_dump()
 
 
+@app.get("/api/recordings")
+async def list_recordings():
+    return [{"id": k, "label": v["label"]} for k, v in DEMO_RECORDINGS.items() if os.path.exists(v["file"])]
+
+
 @app.post("/api/calls/play-recording")
-async def play_recording():
+async def play_recording(req: PlayRequest = PlayRequest()):
     global current_call, playback_task_running, _last_enrichment_len
     if playback_task_running:
         return {"error": "Playback already in progress"}
-    if not os.path.exists(DEMO_AUDIO):
-        return {"error": "Demo audio file not found at backend/assets/demo_call.mp3"}
 
+    recording = DEMO_RECORDINGS.get(req.recording_id)
+    if not recording or not os.path.exists(recording["file"]):
+        return {"error": f"Recording '{req.recording_id}' not found"}
+
+    audio_path = recording["file"]
     _last_enrichment_len = 0
     call_id = str(uuid.uuid4())[:8]
     case_id = 9999
@@ -134,8 +172,8 @@ async def play_recording():
     await broadcast({"type": "call_started", "call_id": call_id, "case_id": case_id})
 
     loop = asyncio.get_event_loop()
-    duration = await loop.run_in_executor(None, get_audio_duration, DEMO_AUDIO)
-    chunks = await loop.run_in_executor(None, split_audio_file, DEMO_AUDIO)
+    duration = await loop.run_in_executor(None, get_audio_duration, audio_path)
+    chunks = await loop.run_in_executor(None, split_audio_file, audio_path)
 
     await broadcast({
         "type": "playback_started",
@@ -144,7 +182,7 @@ async def play_recording():
         "duration_seconds": round(duration, 1),
     })
 
-    asyncio.create_task(run_playback_pipeline(call_id, case_id, chunks, 5))
+    asyncio.create_task(run_playback_pipeline(call_id, case_id, chunks, config.SEGMENT_SECONDS))
     return {
         "call_id": call_id,
         "total_chunks": len(chunks),
@@ -170,11 +208,11 @@ async def run_playback_pipeline(call_id: str, case_id: int, chunks, segment_seco
                 "elapsed": chunk_num * segment_seconds,
             })
 
-            async def process_with_semaphore(path, num):
+            async def process_with_semaphore(path, num, cid):
                 async with CHUNK_SEMAPHORE:
-                    await process_audio_segment(path, num, "playback")
+                    await process_audio_segment(path, num, "playback", origin_call_id=cid)
 
-            task = asyncio.create_task(process_with_semaphore(chunk_path, chunk_num))
+            task = asyncio.create_task(process_with_semaphore(chunk_path, chunk_num, call_id))
             tasks.append(task)
 
             if i < len(chunks) - 1 and current_call.is_recording:
@@ -217,8 +255,8 @@ async def simulate_call(req: SimulateRequest):
     return {"status": "ok", "chunk": current_call.chunk_count}
 
 
-async def process_audio_segment(path: str, chunk: int, stream_type: str):
-    call_id = current_call.call_id
+async def process_audio_segment(path: str, chunk: int, stream_type: str, origin_call_id: str = None):
+    call_id = origin_call_id or current_call.call_id
     case_id = current_call.case_id
     if not call_id:
         return
@@ -227,8 +265,14 @@ async def process_audio_segment(path: str, chunk: int, stream_type: str):
     filename = os.path.basename(path)
     await loop.run_in_executor(None, sf.upload_audio_to_stage, path, filename)
 
+    if current_call.call_id != call_id:
+        return
+
     result = await loop.run_in_executor(None, sf.transcribe_audio, filename)
     if not result or not result.get("text"):
+        return
+
+    if current_call.call_id != call_id:
         return
 
     text = result["text"]
@@ -236,10 +280,14 @@ async def process_audio_segment(path: str, chunk: int, stream_type: str):
     await loop.run_in_executor(None, sf.insert_transcript, case_id, call_id, chunk, stream_type, text, duration)
 
     full_transcript = await loop.run_in_executor(None, sf.get_full_transcript, call_id)
+    if current_call.call_id != call_id:
+        return
     current_call.full_transcript = full_transcript
     current_call.chunk_count = chunk
 
     segments = await loop.run_in_executor(None, sf.diarize_chunk, text)
+    if current_call.call_id != call_id:
+        return
     for seg_idx, seg in enumerate(segments):
         await broadcast({
             "type": "transcript_update",
@@ -250,7 +298,8 @@ async def process_audio_segment(path: str, chunk: int, stream_type: str):
             "full_transcript": full_transcript,
         })
 
-    asyncio.create_task(maybe_run_enrichment(call_id, case_id, full_transcript))
+    if current_call.call_id == call_id:
+        asyncio.create_task(maybe_run_enrichment(call_id, case_id, full_transcript))
 
     try:
         os.remove(path)
@@ -263,13 +312,17 @@ _last_enrichment_len = 0
 
 async def maybe_run_enrichment(call_id: str, case_id: int, full_transcript: str):
     global _last_enrichment_len
+    if current_call.call_id != call_id:
+        return
     transcript_len = len(full_transcript.strip())
-    if transcript_len - _last_enrichment_len >= 100 or not current_call.is_recording:
+    if transcript_len - _last_enrichment_len >= config.ENRICHMENT_MIN_CHARS or not current_call.is_recording:
         _last_enrichment_len = transcript_len
         await run_ai_pipeline(call_id, case_id, full_transcript)
 
 
 async def run_ai_pipeline(call_id: str, case_id: int, full_transcript: str):
+    if current_call.call_id != call_id:
+        return
     if not full_transcript or len(full_transcript.strip()) < 20:
         return
 

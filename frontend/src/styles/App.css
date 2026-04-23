@@ -69,6 +69,14 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background
 .three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
 @media (max-width: 1024px) { .three-col { grid-template-columns: 1fr; } }
 
+.demo-separator {
+  display: flex; align-items: center; gap: 12px; margin: 32px 0 16px;
+  color: #94a3b8; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;
+}
+.demo-separator::before, .demo-separator::after {
+  content: ''; flex: 1; height: 1px; background: repeating-linear-gradient(90deg, #cbd5e1 0, #cbd5e1 4px, transparent 4px, transparent 8px);
+}
+
 .search-row { display: flex; gap: 8px; margin-bottom: 12px; }
 .search-row input {
   flex: 1; padding: 8px 12px; border: 1px solid var(--border);
@@ -178,8 +186,61 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background
 .sim-btn.preset:hover { background: #cbd5e1; }
 .sim-btn.play { background: var(--green); color: #fff; }
 .sim-btn.play:hover { background: #16a34a; }
+.recording-select { padding: 6px 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 13px; background: #fff; color: var(--text); }
 .sim-btn.stop { background: var(--red); color: #fff; }
 .sim-btn.stop:hover { background: #dc2626; }
+.sim-btn.reset { background: var(--orange); color: #fff; }
+.sim-btn.reset:hover { background: #d97706; }
+
+.config-panel {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin-top: 12px;
+}
+.config-toggle {
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  user-select: none;
+}
+.config-toggle:hover { color: var(--text); }
+.config-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px 18px;
+  margin-top: 10px;
+}
+.config-grid label {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+.config-grid input,
+.config-grid select {
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 0.82rem;
+  color: var(--text);
+  background: var(--bg);
+}
+.config-grid input:focus,
+.config-grid select:focus {
+  outline: none;
+  border-color: var(--blue-light);
+  box-shadow: 0 0 0 2px rgba(41, 181, 232, 0.15);
+}
+.config-saving {
+  font-size: 0.75rem;
+  color: var(--blue-mid);
+  align-self: center;
+}
 
 .playback-indicator {
   background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px;
@@ -283,7 +344,7 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background
   padding: 40px 20px;
 }
 
-.bubble-row { display: flex; flex-direction: column; }
+.bubble-row { display: flex; flex-direction: column; margin-bottom: 3px; }
 .bubble-row-left { align-items: flex-start; }
 .bubble-row-right { align-items: flex-end; }
 
@@ -296,9 +357,9 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background
 .label-right { align-self: flex-end; }
 
 .message-bubble {
-  max-width: 82%; padding: 8px 14px;
+  max-width: 75%; padding: 8px 14px;
   font-size: 0.84rem; line-height: 1.5;
-  word-wrap: break-word;
+  word-wrap: break-word; overflow-wrap: break-word; word-break: break-word;
   animation: bubblePop 0.2s ease;
 }
 @keyframes bubblePop { from { opacity: 0; transform: scale(0.95) translateY(4px); } to { opacity: 1; transform: scale(1) translateY(0); } }

@@ -87,3 +87,7 @@ class SimulateRequest(BaseModel):
 
 class SearchRequest(BaseModel):
     query: str
+
+
+class PlayRequest(BaseModel):
+    recording_id: str = "demo_call"

@@ -5,7 +5,7 @@ const WS_URL = 'ws://localhost:8080/ws';
 export default function useWebSocket() {
   const wsRef = useRef(null);
   const [connected, setConnected] = useState(false);
-  const [lastMessage, setLastMessage] = useState(null);
+  const [messageQueue, setMessageQueue] = useState([]);
   const reconnectTimer = useRef(null);
 
   const connect = useCallback(() => {
@@ -16,7 +16,10 @@ export default function useWebSocket() {
       if (reconnectTimer.current) clearTimeout(reconnectTimer.current);
     };
     ws.onmessage = (e) => {
-      try { setLastMessage(JSON.parse(e.data)); } catch {}
+      try {
+        const msg = JSON.parse(e.data);
+        setMessageQueue(prev => [...prev, msg]);
+      } catch {}
     };
     ws.onclose = () => {
       setConnected(false);
@@ -39,5 +42,9 @@ export default function useWebSocket() {
     setTimeout(connect, 100);
   }, [connect]);
 
-  return { connected, lastMessage, reconnect };
+  const clearQueue = useCallback(() => {
+    setMessageQueue([]);
+  }, []);
+
+  return { connected, messageQueue, clearQueue, reconnect };
 }

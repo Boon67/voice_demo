@@ -5,6 +5,7 @@ import uuid
 import threading
 import logging
 from typing import Callable, Optional
+import config
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +22,6 @@ RATE = 44100
 CHANNELS = 1
 FORMAT = None
 CHUNK_FRAMES = 1024
-SEGMENT_SECONDS = 10
 OVERLAP_OFFSET = 7
 
 if AUDIO_AVAILABLE:
@@ -86,7 +86,7 @@ class AudioRecorder:
         return archive_path
 
     def _record_loop(self):
-        segment_frames = RATE * SEGMENT_SECONDS
+        segment_frames = RATE * config.SEGMENT_SECONDS
         overlap_frames = RATE * OVERLAP_OFFSET
         while self._recording:
             try:

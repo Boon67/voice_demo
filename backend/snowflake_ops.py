@@ -3,6 +3,7 @@ import json
 import snowflake.connector
 from typing import Optional, List, Dict, Any
 import logging
+import config
 
 logger = logging.getLogger(__name__)
 
@@ -61,7 +62,7 @@ def diarize_chunk(text: str) -> List[Dict[str, str]]:
         safe_text = text.replace("'", "''").replace("\\", "\\\\")
         sql = f"""
             SELECT TO_VARCHAR(AI_COMPLETE(
-                model => 'llama3.1-70b',
+                model => '{config.DIARIZATION_MODEL}',
                 prompt => 'You are analyzing a call center audio transcript chunk. This chunk may contain speech from both the AGENT and the CALLER. Split the text into segments by speaker. The agent asks questions, verifies info, offers help, and uses professional language. The caller provides personal info (name, email, phone, address), describes problems, and asks about orders/products. Return JSON with a segments array. Each segment has speaker (agent or caller) and text fields. Preserve the exact original text - do not paraphrase or summarize. If the entire chunk is one speaker, return a single segment.\n\nTranscript chunk: {safe_text}',
                 response_format => {{
                     'type': 'json',
@@ -300,7 +301,7 @@ def match_products(customer_id: int, product_mention: str) -> List[Dict[str, Any
             JOIN PRODUCTS p ON oi.product_id = p.product_id
             JOIN ORDERS o ON oi.order_id = o.order_id
             WHERE o.customer_id = {customer_id}
-              AND AI_SIMILARITY('{safe_product}', p.name) > 0.3
+              AND AI_SIMILARITY('{safe_product}', p.name) > {config.SIMILARITY_THRESHOLD_PRODUCT}
             ORDER BY match_score DESC
         """)
         cols = ["product_name", "category", "price", "sku", "quantity",
@@ -321,6 +322,23 @@ def match_products(customer_id: int, product_mention: str) -> List[Dict[str, Any
         conn.close()
 
 
+def reset_runtime_data():
+    conn = get_connection()
+    cur = conn.cursor()
+    try:
+        cur.execute(f"USE DATABASE {DB}")
+        cur.execute("REMOVE @CALL_CENTER.STG.TRANSCRIPTS")
+        cur.execute("TRUNCATE TABLE CALL_TRANSCRIPTS")
+        cur.execute("TRUNCATE TABLE CALL_CANDIDATE_VALUES")
+        return True
+    except Exception as e:
+        logger.error(f"Reset failed: {e}")
+        return False
+    finally:
+        cur.close()
+        conn.close()
+
+
 def find_similar_cases(issue_description: str) -> List[Dict[str, Any]]:
     conn = get_connection()
     cur = conn.cursor()
@@ -332,7 +350,7 @@ def find_similar_cases(issue_description: str) -> List[Dict[str, Any]]:
                    status, priority, issue_description, resolution, opened_date,
                    AI_SIMILARITY('{safe_issue}', issue_description) AS match_score
             FROM CASES
-            WHERE AI_SIMILARITY('{safe_issue}', issue_description) > 0.4
+            WHERE AI_SIMILARITY('{safe_issue}', issue_description) > {config.SIMILARITY_THRESHOLD_CASE}
             ORDER BY match_score DESC
             LIMIT 10
         """)
