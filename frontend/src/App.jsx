@@ -27,6 +27,8 @@ function App() {
   const [recommendations, setRecommendations] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [playbackProgress, setPlaybackProgress] = useState(null);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [transcriptOpen, setTranscriptOpen] = useState(true);
 
   const checkHealth = useCallback(async () => {
     try {
@@ -150,42 +152,57 @@ function App() {
         wsConnected={connected}
         callActive={isPlaying}
         callId={callId}
+        onToggleSidebar={() => setSidebarOpen(o => !o)}
+        onToggleTranscript={() => setTranscriptOpen(o => !o)}
+        sidebarOpen={sidebarOpen}
+        transcriptOpen={transcriptOpen}
+        messageCount={messages.length}
       />
 
-      <CallControls
-        callId={callId}
-        isPlaying={isPlaying}
-        playbackProgress={playbackProgress}
-        onPlaybackStart={handlePlaybackStart}
-        onReset={resetApp}
-      />
+      <div className="main-row">
+        <div className={`drawer ${sidebarOpen ? 'open' : ''}`}>
+          <CallControls
+            callId={callId}
+            isPlaying={isPlaying}
+            playbackProgress={playbackProgress}
+            onPlaybackStart={handlePlaybackStart}
+            onReset={resetApp}
+          />
+        </div>
 
-      <div className="center-panel">
-        {!hasCall ? (
-          <div className="empty-hero">
-            <div className="empty-hero-icon">🎧</div>
-            <div className="empty-hero-title">Agent Assist Ready</div>
-            <div className="empty-hero-desc">
-              Select a demo recording from the sidebar and press Play to see real-time AI agent augmentation powered by Snowflake Cortex.
+        <div className="center-panel">
+          {!hasCall ? (
+            <div className="empty-hero">
+              <div className="empty-hero-icon">🎧</div>
+              <div className="empty-hero-title">Agent Assist Ready</div>
+              <div className="empty-hero-desc">
+                Click the ☰ menu to open demo controls, then select a recording and press Play to see real-time AI agent augmentation powered by Snowflake Cortex.
+              </div>
             </div>
-          </div>
-        ) : (
-          <>
-            <CallSummary extracted={extracted} />
-            <CustomerLookup matchedCustomer={customer} matchedOrders={orders} />
-            <ProductMatch products={products} />
-            <SimilarCases cases={similarCases} />
-            <ResolutionCard recommendations={recommendations} />
-          </>
-        )}
-      </div>
+          ) : (
+            <div className="center-columns">
+              <div className="center-col">
+                <CallSummary extracted={extracted} />
+                <CustomerLookup matchedCustomer={customer} matchedOrders={orders} />
+                <ProductMatch products={products} />
+              </div>
+              <div className="center-col">
+                <SimilarCases cases={similarCases} />
+                <ResolutionCard recommendations={recommendations} />
+              </div>
+            </div>
+          )}
+        </div>
 
-      <TranscriptPanel
-        messages={messages}
-        callerName={callerName}
-        isPlaying={isPlaying}
-        playbackProgress={playbackProgress}
-      />
+        <div className={`drawer ${transcriptOpen ? 'open' : ''}`}>
+          <TranscriptPanel
+            messages={messages}
+            callerName={callerName}
+            isPlaying={isPlaying}
+            playbackProgress={playbackProgress}
+          />
+        </div>
+      </div>
     </div>
   );
 }

@@ -24,7 +24,7 @@ export default function ProductMatch({ products }) {
                 {p.tracking_number && ` · Tracking: ${p.tracking_number}`}
               </div>
             </div>
-            <div className={`match-score-badge ${scoreClass(p.match_score)}`}>
+            <div key={p.match_score} className={`match-score-badge ${scoreClass(p.match_score)} flash`}>
               {Math.round(p.match_score * 100)}%
               <span className="match-score-label">match</span>
             </div>

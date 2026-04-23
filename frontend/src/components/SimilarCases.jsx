@@ -24,7 +24,7 @@ export default function SimilarCases({ cases }) {
                 <span className={`status-badge ${c.status}`}>{c.status}</span>
                 <span className={`priority-badge ${c.priority}`}>{c.priority}</span>
               </div>
-              <div className={`match-score-badge ${scoreClass(c.match_score)}`} style={{ width: 40, height: 40, fontSize: '0.75rem' }}>
+              <div key={c.match_score} className={`match-score-badge ${scoreClass(c.match_score)} flash`} style={{ width: 40, height: 40, fontSize: '0.75rem' }}>
                 {Math.round(c.match_score * 100)}%
                 <span className="match-score-label">match</span>
               </div>
