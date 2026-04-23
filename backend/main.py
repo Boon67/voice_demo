@@ -365,6 +365,7 @@ async def run_ai_pipeline(call_id: str, case_id: int, full_transcript: str):
                 "products": products,
             })
 
+    similar = []
     if issue_desc and issue_desc.lower() not in ("none", "null", "n/a", ""):
         similar = await loop.run_in_executor(None, sf.find_similar_cases, issue_desc)
         if similar:
@@ -373,6 +374,23 @@ async def run_ai_pipeline(call_id: str, case_id: int, full_transcript: str):
                 "call_id": call_id,
                 "cases": similar,
                 "count": len(similar),
+            })
+
+    if issue_desc and issue_desc.lower() not in ("none", "null", "n/a", ""):
+        past_resolutions = [c.get("resolution", "") for c in similar if c.get("resolution")]
+        rec_context = {
+            "customer": matched_customer,
+            "issue_description": issue_desc,
+            "product_name": product_mention or "",
+            "past_resolutions": past_resolutions,
+            "transcript_summary": full_transcript[:2000],
+        }
+        recs = await loop.run_in_executor(None, sf.generate_recommendations, rec_context)
+        if recs:
+            await broadcast({
+                "type": "recommendations",
+                "call_id": call_id,
+                "recommendations": recs,
             })
 
 

@@ -8,6 +8,7 @@ import CustomerLookup from './components/CustomerLookup';
 import ProductMatch from './components/ProductMatch';
 import SimilarCases from './components/SimilarCases';
 import CallSummary from './components/CallSummary';
+import ResolutionCard from './components/ResolutionCard';
 
 const API = 'http://localhost:8080';
 
@@ -23,6 +24,7 @@ function App() {
   const [orders, setOrders] = useState(null);
   const [products, setProducts] = useState(null);
   const [similarCases, setSimilarCases] = useState(null);
+  const [recommendations, setRecommendations] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [playbackProgress, setPlaybackProgress] = useState(null);
 
@@ -55,6 +57,7 @@ function App() {
           setOrders(null);
           setProducts(null);
           setSimilarCases(null);
+          setRecommendations(null);
           break;
         case 'transcript_update':
           setMessages(prev => {
@@ -86,6 +89,9 @@ function App() {
         case 'similar_cases':
           setSimilarCases(msg.cases);
           break;
+        case 'recommendations':
+          setRecommendations(msg.recommendations);
+          break;
         case 'playback_started':
           setIsPlaying(true);
           setPlaybackProgress({ chunk: 0, total: msg.total_chunks });
@@ -111,6 +117,7 @@ function App() {
           setOrders(null);
           setProducts(null);
           setSimilarCases(null);
+          setRecommendations(null);
           setIsPlaying(false);
           setPlaybackProgress(null);
           break;
@@ -168,6 +175,7 @@ function App() {
             <CustomerLookup matchedCustomer={customer} matchedOrders={orders} />
             <ProductMatch products={products} />
             <SimilarCases cases={similarCases} />
+            <ResolutionCard recommendations={recommendations} />
           </>
         )}
       </div>

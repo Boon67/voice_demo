@@ -339,6 +339,82 @@ def reset_runtime_data():
         conn.close()
 
 
+def generate_recommendations(context: Dict[str, Any]) -> List[Dict[str, Any]]:
+    conn = get_connection()
+    cur = conn.cursor()
+    try:
+        cur.execute(f"USE DATABASE {DB}")
+
+        customer = context.get("customer", {})
+        tier = customer.get("loyalty_tier", "UNKNOWN") if customer else "UNKNOWN"
+        issue = context.get("issue_description", "")
+        product = context.get("product_name", "")
+        resolutions = context.get("past_resolutions", [])
+        transcript_summary = context.get("transcript_summary", "")
+
+        past_res_text = "; ".join(resolutions[:5]) if resolutions else "No prior case resolutions available"
+        safe_text = f"""Customer loyalty tier: {tier}
+Product: {product}
+Issue: {issue}
+Past similar case resolutions: {past_res_text}
+Call summary: {transcript_summary}""".replace("'", "''").replace("\\", "\\\\")
+
+        sql = f"""
+            SELECT TO_VARCHAR(AI_COMPLETE(
+                model => '{config.DIARIZATION_MODEL}',
+                prompt => 'You are an AI assistant for a call center supervisor. Based on the following call context, generate 3-5 recommended resolution options that an agent can offer the customer. Consider the customer loyalty tier when ranking options — higher tier customers should get more generous options. Each recommendation needs an action name, description, reasoning, confidence level, and an icon category.
+
+Context:
+{safe_text}
+
+Generate actionable resolution options ranked from most recommended to least.',
+                response_format => {{
+                    'type': 'json',
+                    'schema': {{
+                        'type': 'object',
+                        'properties': {{
+                            'recommendations': {{
+                                'type': 'array',
+                                'items': {{
+                                    'type': 'object',
+                                    'properties': {{
+                                        'action': {{'type': 'string'}},
+                                        'description': {{'type': 'string'}},
+                                        'reasoning': {{'type': 'string'}},
+                                        'confidence': {{'type': 'string'}},
+                                        'icon': {{'type': 'string'}}
+                                    }},
+                                    'required': ['action', 'description', 'reasoning', 'confidence', 'icon']
+                                }}
+                            }}
+                        }},
+                        'required': ['recommendations']
+                    }}
+                }}
+            ))
+        """
+        cur.execute(sql)
+        row = cur.fetchone()
+        if row and row[0]:
+            result = json.loads(row[0]) if isinstance(row[0], str) else row[0]
+            recs = result.get("recommendations", [])
+            for r in recs:
+                r["confidence"] = r.get("confidence", "medium").lower()
+                valid_icons = ("refund", "replace", "upgrade", "discount", "escalate", "repair", "credit", "exchange")
+                if r.get("icon", "").lower() not in valid_icons:
+                    r["icon"] = "replace"
+                else:
+                    r["icon"] = r["icon"].lower()
+            return recs
+        return []
+    except Exception as e:
+        logger.error(f"Recommendation generation failed: {e}")
+        return []
+    finally:
+        cur.close()
+        conn.close()
+
+
 def find_similar_cases(issue_description: str) -> List[Dict[str, Any]]:
     conn = get_connection()
     cur = conn.cursor()
